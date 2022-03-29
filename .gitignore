@@ -1,0 +1,8 @@
+*.exe
+*.o
+*.win
+*.h
+*.rc
+*.res
+*.dev
+*.*ico
