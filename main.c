@@ -3,7 +3,7 @@
 // Definição de constantes
 #define width 800
 #define height 600
-
+#define gravidade 4
 // Definição de Estruturas
 typedef struct {
 	int x, y; 	// Coordenada na janela
@@ -17,7 +17,10 @@ SPRITE player = {0, 0, 0, 0, 68, 90};	// Player
 SPRITE bloco[10][14];					// Matriz do cenário
 int sair = 0;							// Fechar programa
 int nTile = 0, direcao = 0;				// Animação
-int vly = 0, grv = 4, caindo = 1;				// Física do game
+int vly = 0, caindo = 1;				// Física do game
+int pulando = 0;
+int vup = 15;
+int pLimit = 0;
 
 // Declaração de Funções
 void sair_allegro();
@@ -47,7 +50,7 @@ int main()
 	for(i =  0; i < 10; i ++)
 		for(j = 0; j < 14; j ++)
 		{
-			bloco[i][j].y = 540;
+			bloco[i][j].y = 400;
 			bloco[i][j].x = j * 60;
 			bloco[i][j].w = 60;
 			bloco[i][j].h = 60;
@@ -65,6 +68,7 @@ int main()
 				draw_sprite(buffer, plataforma, bloco[i][j].x, bloco[i][j].y);
 				if(hitbox(player, bloco[i][j]))
 				{
+					player.y = bloco[i][j].y - player.h;
 					caindo = 0;
 				}
 			}
@@ -84,6 +88,12 @@ END_OF_MAIN()
 // Função dos controles do jogo
 void control()
 {
+	if(key[KEY_SPACE] && !pulando && vly)
+	{
+		pLimit = player.y;
+		pulando = 1;
+	}
+
 	if(key[KEY_LEFT])
 	{
 		player.x -= 20;
@@ -118,11 +128,22 @@ void control()
 	if(nTile < 0)
 		nTile = 3;
 	
-	if(caindo)
+	if(pulando && player.y > pLimit - 30)
 	{
-		vly += grv;
 		player.y += vly;
-	}
+		vly = -vup;
+		caindo = 1;
+	}else
+		if(caindo)
+		{
+			pulando = 0;
+			vly += gravidade;
+			player.y += vly;
+		}else
+		{
+			pulando = 0;
+			vly = 0;
+		}
 	caindo = 1;
 }
 
