@@ -1,9 +1,11 @@
 #include <allegro.h>
 
 // Definição de constantes
-#define width 800
+#define width 780
 #define height 600
 #define gravidade 4
+#define vup 15							// Velocidade de subida
+#define out -500
 // Definição de Estruturas
 typedef struct {
 	int x, y; 	// Coordenada na janela
@@ -18,14 +20,18 @@ SPRITE bloco[10][14];					// Matriz do cenário
 int sair = 0;							// Fechar programa
 int nTile = 0, direcao = 0;				// Animação
 int vly = 0, caindo = 1;				// Física do game
-int pulando = 0;
-int vup = 15;
-int pLimit = 0;
+int pulando = 0;						// Flag do pulo
+int pLimit = 0;							// Limite do pulo
+char mp[13][10];
+// Declara BITMAPs do programa
+BITMAP *buffer, *boneco, *plataforma;
 
 // Declaração de Funções
 void sair_allegro();
 void control();
+void mapa();
 int hitbox(SPRITE a, SPRITE b);
+void blocos();
 
 // Inicio do Programa
 int main()
@@ -38,40 +44,31 @@ int main()
 	set_gfx_mode(GFX_AUTODETECT_WINDOWED, width, height, 0, 0);
 	set_window_title("Jogo de Plataforma");
 	
-	// Cria elementos visuais do jogo
-	BITMAP* buffer = create_bitmap(width, height);
-	BITMAP* boneco = load_bitmap("source/steve.bmp", NULL);
-	BITMAP* plataforma = load_bitmap("source/chao.bmp", NULL);
+	// Carrega elementos visuais do jogo
+	buffer = create_bitmap(width, height);
+	boneco = load_bitmap("source/steve.bmp", NULL);
+	plataforma = load_bitmap("source/chao.bmp", NULL);
 
 	// Variávei locais
 	int i, j;	// Iteração de loops
 	
 	// Alinhamento da matriz (cenário)
 	for(i =  0; i < 10; i ++)
-		for(j = 0; j < 14; j ++)
+		for(j = 0; j < 13; j ++)
 		{
-			bloco[i][j].y = 400;
+			bloco[i][j].y = i * 60;
 			bloco[i][j].x = j * 60;
 			bloco[i][j].w = 60;
 			bloco[i][j].h = 60;
 			bloco[i][j].wy = 0;
 			bloco[i][j].wx = 0;
 		}
-
+	mapa();
 	// Mantem programa aberto
 	while(!sair)
 	{
 		control();
-		for(i =  0; i < 10; i ++)
-			for(j = 0; j < 14; j ++)
-			{
-				draw_sprite(buffer, plataforma, bloco[i][j].x, bloco[i][j].y);
-				if(hitbox(player, bloco[i][j]))
-				{
-					player.y = bloco[i][j].y - player.h;
-					caindo = 0;
-				}
-			}
+		blocos();
 		masked_blit(boneco, buffer, player.wx + nTile * player.w, player.wy + direcao * player.h , player.x, player.y, player.w, player.h);
 		draw_sprite(screen, buffer, 0, 0);
 		rest(50);
@@ -132,7 +129,7 @@ void control()
 	{
 		player.y += vly;
 		vly = -vup;
-		caindo = 1;
+		 caindo = 1;
 	}else
 		if(caindo)
 		{
@@ -155,6 +152,50 @@ int hitbox(SPRITE a, SPRITE b)
 	else 
 		return 0;
 }
+
+// Funcão que cria o mapa
+void mapa()
+{
+	int i, j;
+	char mapa[13][10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 14 x 10
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+						  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,};
+	for(i =  0; i < 10; i ++)
+		for(j = 0; j < 13; j ++)
+		{
+			if(mapa[i][j])
+			{
+				bloco[i][j].wx = (mapa[i][j] - 1) * bloco[i][j].w;
+			}
+			else
+			bloco[i][j].x = out;
+			mp[i][j] = mapa[i][j];
+		}
+}
+// Funcão do cenário
+void blocos()
+{
+	int i, j;
+	for(i =  0; i < 10; i ++)
+			for(j = 0; j < 13; j ++)
+			{
+				draw_sprite(buffer, plataforma, bloco[i][j].x, bloco[i][j].y);
+				if(hitbox(player, bloco[i][j]))
+				{
+					player.y = bloco[i][j].y - player.h;
+					caindo = 0;
+					pulando = 0;
+				}
+			}
+}
+
 // Função chamada quando o X da janela é clicado
 void sair_allegro()
 {
